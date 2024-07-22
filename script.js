@@ -5,8 +5,9 @@ document.getElementById('budgetForm').addEventListener('submit', function(event)
   const device = capitalizeFirstLetter(document.getElementById('device').value);
   const diagnosis = capitalizeFirstLetter(document.getElementById('diagnosis').value);
   const cashValue = formatCurrency(document.getElementById('cashValue').value);
-  const installmentValue = formatCurrency(document.getElementById('installmentValue').value);
-  const installments = document.getElementById('installments').value;
+  const installments = parseInt(document.getElementById('installments').value, 10);
+
+  const installmentValue = calculateInstallmentValue(cashValue, installments);
 
   const outputText = `
 Olá, ${clientName}, tudo bem? Aqui é da Technique Eletrônica.
@@ -23,7 +24,7 @@ O valor para o reparo com a peça + mão de obra:
 Fico no aguardo da sua posição.
 
 Tenha um ótimo dia.
-`.trim(); // Remover espaços adicionais no início e fim
+`.trim();
 
   document.getElementById('outputText').value = outputText;
 
@@ -52,9 +53,10 @@ document.getElementById('sendWhatsAppButton').addEventListener('click', function
   const device = capitalizeFirstLetter(document.getElementById('device').value);
   const diagnosis = capitalizeFirstLetter(document.getElementById('diagnosis').value);
   const cashValue = formatCurrency(document.getElementById('cashValue').value);
-  const installmentValue = formatCurrency(document.getElementById('installmentValue').value);
-  const installments = document.getElementById('installments').value;
+  const installments = parseInt(document.getElementById('installments').value, 10);
   const phoneNumber = document.getElementById('phoneNumber').value.trim();
+
+  const installmentValue = calculateInstallmentValue(cashValue, installments);
 
   // Adicionar o DDD 51 e o prefixo internacional
   const phone = phoneNumber.replace(/\D/g, '');
@@ -65,9 +67,9 @@ document.getElementById('sendWhatsAppButton').addEventListener('click', function
       const whatsappMessage = `
 Olá, ${clientName}, tudo bem? Aqui é da Technique Eletrônica.
 
-Referente ao seu orçamento do seu ${device}
+Referente ao seu orçamento do seu aparelho: ${device}
 
-${diagnosis}
+*${diagnosis}*
 
 O valor para o reparo com a peça + mão de obra:
 
@@ -82,6 +84,9 @@ Tenha um ótimo dia.
       // Abrir WhatsApp Web com mensagem pré-preenchida
       const whatsappURL = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappURL);
+
+      // Limpar o formulário após o envio
+      document.getElementById('budgetForm').reset();
   } else {
       alert('Por favor, insira um número de telefone válido com DDD.');
   }
@@ -110,6 +115,32 @@ function formatCurrency(value) {
 
   // Format the currency
   return value;
+}
+
+function calculateInstallmentValue(cashValue, installments) {
+  const interestRates = {
+      2: 5.39,
+      3: 6.12,
+      4: 6.85,
+      5: 7.57,
+      6: 8.28,
+      7: 8.99,
+      8: 9.69,
+      9: 10.38,
+      10: 11.06,
+      11: 11.74,
+      12: 12.40
+  };
+
+  if (!interestRates[installments]) {
+      return 'Valor de parcelas inválido';
+  }
+
+  const cashValueNumber = parseFloat(cashValue.replace(',', '.'));
+  const interestRate = interestRates[installments] / 100;
+  const installmentValue = cashValueNumber * (1 + interestRate);
+
+  return installmentValue.toFixed(2).replace('.', ',');
 }
 
 function copyToClipboard(text) {
